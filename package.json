@@ -1,0 +1,27 @@
+{
+  "name": "xstack-layered-arch",
+  "version": "0.0.1",
+  "description": "nodejs express app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Onlyal33/xstack-layered-arch.git"
+  },
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "rm -rf dist && tsc && ./node_modules/.bin/pm2 start dist/index.js --name xstack-layered-arch-app",
+    "stop": "./node_modules/.bin/pm2 stop xstack-layered-arch-app",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Onlyal33",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "joi": "^17.12.3"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "pm2": "^5.3.1",
+    "typescript": "^5.4.5"
+  }
+}
