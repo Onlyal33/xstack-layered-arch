@@ -1,28 +1,39 @@
 import type { Request, Response, NextFunction } from 'express';
 import { AppError } from './errorHandler.middleware.js';
 import { findUserByIdService } from '../services/user.service.js';
+import { Types } from 'mongoose';
 
-export const authenticationMiddleware = (
+export const authenticationMiddleware = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   const userId = req.headers['x-user-id'];
 
-  if (!userId || typeof userId !== 'string') {
-    return next(new AppError('User is not authorized', 401));
+  if (
+    !userId ||
+    typeof userId !== 'string' ||
+    !Types.ObjectId.isValid(userId)
+  ) {
+    next(new AppError('User is not authorized', 401));
+    return;
   }
 
   if (userId === 'admin') {
     return next();
   }
+  try {
+    const user = await findUserByIdService(userId);
+    if (!user) {
+      next(new AppError('You must be authorized user', 403));
+      return;
+    }
 
-  const user = findUserByIdService(userId);
-
-  if (!user) {
-    return next(new AppError('You must be authorized user', 403));
+    req.user = user;
+  } catch (error) {
+    next(new AppError('You must be authorized user', 403));
+    return;
   }
 
-  req.user = user;
   next();
 };

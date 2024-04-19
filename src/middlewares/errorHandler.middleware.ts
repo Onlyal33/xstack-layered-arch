@@ -12,7 +12,7 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  console.error(err.stack);
+  console.error(err);
   if (err instanceof AppError) {
     res
       .status(err.statusCode)

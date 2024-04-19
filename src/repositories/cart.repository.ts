@@ -1,41 +1,104 @@
-import { v4 as uuidv4 } from 'uuid';
-import type { CartEntity } from '../types/cart.entity.js';
-import { AppError } from '../middlewares/errorHandler.middleware.js';
+import type { CartEntity, CartEntityToDb } from '../types/cart.entity.js';
+import { Cart } from '../models/cart.model.js';
+import type { WithMongoId, WithoutId } from '../types/utility.js';
+import { transformProductToDto } from './product.repository.js';
+import type { ProductEntity } from '../types/product.entity.js';
 
-const carts: CartEntity[] = [];
-
-export const getCarts = (): CartEntity[] => {
-  return carts;
-};
-
-export const addCart = (cartWithoutId: Omit<CartEntity, 'id'>): CartEntity => {
-  const cart = { ...cartWithoutId, id: uuidv4() };
-  carts.push(cart);
-  return cart;
-};
-
-export const getCartById = (id: string): CartEntity | undefined => {
-  return carts.find((cart) => cart.id === id);
-};
-
-export const getCartByUserId = (userId: string): CartEntity | undefined => {
-  return carts.find((cart) => cart.userId === userId);
-};
-
-export const updateCart = (cart: CartEntity) => {
-  const index = carts.findIndex((c) => c.id === cart.id);
-  if (index >= 0) {
-    carts[index] = cart;
-  } else {
-    throw new AppError('Cart was not found', 404);
+const transformCartToDto = (
+  cart:
+    | (WithMongoId<CartEntity> & {
+        items: { count: number; product: WithMongoId<ProductEntity> }[];
+      })
+    | null
+): CartEntity | null => {
+  if (cart === null) {
+    return null;
   }
+
+  return {
+    id: cart._id.toString(),
+    userId: cart.userId,
+    isDeleted: cart.isDeleted,
+    items:
+      cart.items.map(
+        ({
+          count,
+          product,
+        }: {
+          count: number;
+          product: WithMongoId<ProductEntity>;
+        }) => ({
+          count,
+          product: transformProductToDto(product),
+        })
+      ) || [],
+  };
 };
 
-export const deleteCart = (id: string) => {
-  const index = carts.findIndex((cart) => cart.userId === id);
-  if (index >= 0) {
-    carts.splice(index, 1);
-  } else {
-    throw new AppError('Cart was not found', 404);
-  }
+export const getCartById = async (id: string): Promise<CartEntity | null> => {
+  return transformCartToDto(
+    await Cart.findById(id)
+      .populate({
+        path: 'items',
+        populate: {
+          path: 'product',
+          model: 'Product',
+        },
+      })
+      .lean()
+  );
+};
+
+export const getCartByUserId = async (
+  userId: string
+): Promise<CartEntity | null> => {
+  return transformCartToDto(
+    await Cart.findOne({ userId })
+      .populate({
+        path: 'items',
+        populate: {
+          path: 'product',
+          model: 'Product',
+        },
+      })
+      .lean()
+  );
+};
+
+export const addCart = async (
+  cartWithoutId: WithoutId<CartEntity>
+): Promise<CartEntity | null> => {
+  return transformCartToDto(
+    await (
+      await Cart.create(cartWithoutId)
+    ).populate({
+      path: 'items',
+      populate: {
+        path: 'product',
+        model: 'Product',
+      },
+    })
+  );
+};
+
+export const updateCart = async (
+  cart: CartEntityToDb
+): Promise<CartEntity | null> => {
+  return transformCartToDto(
+    await Cart.findByIdAndUpdate(cart.id, cart, {
+      new: true,
+    }).populate({
+      path: 'items',
+      populate: {
+        path: 'product',
+        model: 'Product',
+      },
+    })
+  );
+};
+
+export const deleteCart = async (
+  userId: string
+): Promise<CartEntity | null> => {
+  return transformCartToDto(await Cart.findOneAndDelete({ userId }));
 };

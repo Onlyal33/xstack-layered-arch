@@ -1,0 +1,12 @@
+version: '3'
+services:
+  mongo:
+    image: "mongo"
+    container_name: "xstack-layered-arch-nosql"
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=nodegmp
+      - MONGO_INITDB_DATABASE=layered-arch-nosql
+    ports:
+      - '27017:27017'

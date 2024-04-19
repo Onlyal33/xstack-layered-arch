@@ -1,29 +1,37 @@
 import type { CartEntity } from '../types/cart.entity.js';
-import type { OrderEntity } from '../types/order.entity.js';
+import type { OrderEntity, OrderEntityToDb } from '../types/order.entity.js';
 import { addOrder } from '../repositories/order.repository.js';
+import { AppError } from '../middlewares/errorHandler.middleware.js';
 
-export const createOrderService = (
+export const createOrderService = async (
   userId: string,
   cart: CartEntity
-): OrderEntity => {
-  const orderWithoutId: Omit<OrderEntity, 'id'> = {
+): Promise<OrderEntity> => {
+  const orderWithoutId: OrderEntityToDb = {
     userId,
     cartId: cart.id,
-    items: cart.items,
+    items: cart.items.map((item) => ({
+      product: item.product?.id,
+      count: item.count,
+    })),
     payment: {
       type: 'paypal',
     },
     delivery: {
       type: 'post',
-      address: undefined,
+      address: 'some address',
     },
-    comments: '',
+    comments: 'some comments',
     status: 'created',
     total: cart.items.reduce(
       (acc, item) => acc + item.product.price * item.count,
       0
     ),
   };
-  const order = addOrder(orderWithoutId);
+  const order = await addOrder(orderWithoutId);
+  if (!order) {
+    throw new AppError('Order was not created', 400);
+  }
+
   return order;
 };
