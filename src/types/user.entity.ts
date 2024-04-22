@@ -1,3 +1,3 @@
 export interface UserEntity {
-  id: string; // uuid
+  id: string;
 }
