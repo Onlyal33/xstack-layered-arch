@@ -1,10 +1,16 @@
-import mongoose, { Schema } from 'mongoose';
-import type { ProductEntity } from '../types/product.entity.js';
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-const ProductSchema: Schema = new Schema({
-  title: { type: String, required: true },
-  description: { type: String, required: true },
-  price: { type: Number, required: true },
-});
+@Entity()
+export class Product {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string;
 
-export const Product = mongoose.model<ProductEntity>('Product', ProductSchema);
+  @Property()
+  title!: string;
+
+  @Property()
+  description!: string;
+
+  @Property()
+  price!: number;
+}

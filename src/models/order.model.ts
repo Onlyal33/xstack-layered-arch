@@ -1,30 +1,60 @@
-import mongoose, { Schema } from 'mongoose';
-import type { OrderEntity } from '../types/order.entity.js';
-import { Product } from './product.model.js';
+import {
+  Entity,
+  JsonType,
+  ManyToOne,
+  OneToOne,
+  PrimaryKey,
+  Property,
+} from '@mikro-orm/core';
+import type { Ref } from '@mikro-orm/core';
 import { User } from './user.model.js';
 import { Cart } from './cart.model.js';
+import type { CartItemEntity } from '../types/cart.entity.js';
+import type { ORDER_STATUS } from '../types/order.entity.js';
 
-const OrderSchema: Schema = new Schema({
-  userId: { type: Schema.Types.ObjectId, required: true, ref: User },
-  cartId: { type: Schema.Types.ObjectId, required: true, ref: Cart },
-  items: [
-    {
-      product: { type: Schema.Types.ObjectId, ref: Product, required: true },
-      count: { type: Number, required: true, default: 0 },
-    },
-  ],
-  payment: {
-    type: { type: String, required: true },
-    address: { type: String },
-    creditCard: { type: String },
-  },
-  delivery: {
-    type: { type: String, required: true },
-    address: { type: String, required: true },
-  },
-  comments: { type: String, required: true },
-  status: { type: String, required: true, enum: ['created', 'completed'] },
-  total: { type: Number, required: true, default: 0 },
-});
+@Entity()
+export class Order {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string;
 
-export const Order = mongoose.model<OrderEntity>('Order', OrderSchema);
+  @ManyToOne(() => User, { ref: true })
+  user!: Ref<User>;
+
+  @OneToOne(() => Cart)
+  cart!: Ref<Cart>;
+
+  @Property({ type: JsonType })
+  items!: CartItemEntity[];
+
+  @Property({ type: JsonType })
+  payment!: {
+    type: string;
+    address?: any;
+    creditCard?: any;
+  };
+
+  @Property({ type: JsonType })
+  delivery!: {
+    type: string;
+    address: any;
+  };
+
+  @Property()
+  comments!: string;
+
+  @Property()
+  status!: ORDER_STATUS;
+
+  @Property()
+  total!: number;
+
+  @Property({ persist: false })
+  get userId(): string {
+    return this.user?.id;
+  }
+
+  @Property({ persist: false })
+  get cartId(): string {
+    return this.cart?.id;
+  }
+}

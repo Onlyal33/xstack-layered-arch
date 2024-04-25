@@ -1,16 +1,8 @@
 import type { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 import { AppError } from './errorHandler.middleware.js';
-import { Types } from 'mongoose';
 
-const idSchema = Joi.string()
-  .custom((value, helpers) => {
-    if (!Types.ObjectId.isValid(value)) {
-      return helpers.error('any.invalid');
-    }
-    return value;
-  })
-  .required();
+export const idSchema = Joi.string().uuid().required();
 
 const updateCartSchema = Joi.object({
   productId: idSchema,

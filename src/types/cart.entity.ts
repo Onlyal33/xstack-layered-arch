@@ -5,21 +5,14 @@ export interface CartItemEntity {
   count: number;
 }
 
+export interface CartItemEntityToDb {
+  productId: string;
+  count: number;
+}
+
 export interface CartEntity {
   id: string;
   userId: string;
   isDeleted: boolean;
   items: CartItemEntity[];
-}
-
-export interface CartItemEntityToDb {
-  product: string;
-  count: number;
-}
-
-export interface CartEntityToDb {
-  id: string;
-  userId: string;
-  isDeleted: boolean;
-  items: CartItemEntityToDb[];
 }

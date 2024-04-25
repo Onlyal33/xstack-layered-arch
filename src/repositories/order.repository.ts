@@ -1,37 +1,13 @@
-import type { OrderEntity, OrderEntityToDb } from '../types/order.entity.js';
+import { db } from '../index.js';
 import { Order } from '../models/order.model.js';
-import type { WithMongoId, WithoutId } from '../types/utility.js';
-import type { ProductEntity } from '../types/product.entity.js';
-import { transformProductToDto } from './product.repository.js';
+import type { OrderEntity, OrderEntityToDb } from '../types/order.entity.js';
 
-const transformOrderToDto = (
-  order:
-    | (WithMongoId<OrderEntity> & {
-        items: { count: number; product: WithMongoId<ProductEntity> }[];
-      })
-    | null
-): OrderEntity | null => {
-  if (order === null) {
-    return null;
-  }
-
+const transformOrderToDto = (order: Order): OrderEntity => {
   return {
-    id: order._id.toString(),
-    userId: order.userId,
-    cartId: order.cartId,
-    items:
-      order.items.map(
-        ({
-          count,
-          product,
-        }: {
-          count: number;
-          product: WithMongoId<ProductEntity>;
-        }) => ({
-          count,
-          product: transformProductToDto(product),
-        })
-      ) || [],
+    id: order.id,
+    userId: order.user.id,
+    cartId: order.cart.id,
+    items: order.items,
     payment: order.payment,
     delivery: order.delivery,
     comments: order.comments,
@@ -43,15 +19,15 @@ const transformOrderToDto = (
 export const addOrder = async (
   orderWithoutId: OrderEntityToDb
 ): Promise<OrderEntity | null> => {
-  return transformOrderToDto(
-    await (
-      await Order.create(orderWithoutId)
-    ).populate({
-      path: 'items',
-      populate: {
-        path: 'product',
-        model: 'Product',
-      },
-    })
-  );
+  const order = new Order();
+
+  db.orders.assign(order, {
+    ...orderWithoutId,
+    user: orderWithoutId.userId,
+    cart: orderWithoutId.cartId,
+  });
+
+  await db.em.persistAndFlush(order);
+
+  return transformOrderToDto(order);
 };

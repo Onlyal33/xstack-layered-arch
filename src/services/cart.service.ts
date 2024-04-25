@@ -1,4 +1,4 @@
-import type { CartEntity, CartEntityToDb } from '../types/cart.entity.js';
+import type { CartEntity } from '../types/cart.entity.js';
 import type { OrderEntity } from '../types/order.entity.js';
 import {
   addCart,
@@ -13,13 +13,7 @@ import { AppError } from '../middlewares/errorHandler.middleware.js';
 export const getCartService = async (userId: string): Promise<CartEntity> => {
   let cart = await getCartByUserId(userId);
   if (!cart) {
-    const cartWithoutId = {
-      userId,
-      isDeleted: false,
-      items: [],
-    };
-
-    cart = await addCart(cartWithoutId);
+    cart = await addCart(userId);
     if (!cart) {
       throw new AppError('Cart was not created', 400);
     }
@@ -37,33 +31,7 @@ export const updateCartService = async (
     throw new AppError('Products are not valid', 400);
   }
 
-  const cart = await getCartService(userId);
-  const index = cart.items.findIndex(
-    (item) => item.product?.id === updatedItems.productId
-  );
-
-  const cartDraft: CartEntityToDb = {
-    id: cart.id,
-    userId: cart.userId,
-    isDeleted: cart.isDeleted,
-    items: cart.items.map((item) => ({
-      product: item.product?.id,
-      count: item.count,
-    })),
-  };
-
-  if (index >= 0 && updatedItems.count > 0) {
-    cartDraft.items[index].count = updatedItems.count;
-  } else if (index >= 0 && updatedItems.count <= 0) {
-    cartDraft.items.splice(index, 1);
-  } else if (index < 0 && updatedItems.count > 0) {
-    cartDraft.items.push({
-      product: updatedItems.productId,
-      count: updatedItems.count,
-    });
-  }
-
-  const updatedCart = await updateCart(cartDraft);
+  const updatedCart = await updateCart(userId, updatedItems);
   if (!updatedCart) {
     throw new AppError('Cart was not updated', 400);
   }

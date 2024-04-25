@@ -1,39 +1,28 @@
-import type { ProductEntity } from '../types/product.entity.js';
+import { db } from '../index.js';
 import { Product } from '../models/product.model.js';
-import type { WithMongoId, WithoutId } from '../types/utility.js';
-
-export function transformProductToDto(product: null): null;
-export function transformProductToDto(
-  product: WithMongoId<ProductEntity>
-): ProductEntity;
-export function transformProductToDto(
-  product: WithMongoId<ProductEntity> | null
-): ProductEntity | null {
-  if (product === null) {
-    return null;
-  }
-
-  return {
-    id: product._id.toString(),
-    title: product.title,
-    description: product.description,
-    price: product.price,
-  };
-}
+import type { ProductEntity } from '../types/product.entity.js';
+import type { WithoutId } from '../types/utility.js';
 
 export const getProducts = async (): Promise<ProductEntity[]> => {
-  const products = await Product.find();
-  return products.map(transformProductToDto) as ProductEntity[];
+  const products = await db.products.findAll();
+  return products;
 };
 
 export const getProductById = async (
   id: string
 ): Promise<ProductEntity | null> => {
-  return transformProductToDto(await Product.findById(id));
+  const product = await db.products.findOne(id);
+  return product;
 };
 
 export const addProduct = async (
   product: WithoutId<ProductEntity>
 ): Promise<ProductEntity | null> => {
-  return transformProductToDto(await Product.create(product));
+  const newProduct = new Product();
+  newProduct.title = product.title;
+  newProduct.description = product.description;
+  newProduct.price = product.price;
+  db.products.create(newProduct);
+  await db.em.flush();
+  return newProduct;
 };

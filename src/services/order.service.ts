@@ -11,7 +11,7 @@ export const createOrderService = async (
     userId,
     cartId: cart.id,
     items: cart.items.map((item) => ({
-      product: item.product?.id,
+      productId: item.product?.id,
       count: item.count,
     })),
     payment: {

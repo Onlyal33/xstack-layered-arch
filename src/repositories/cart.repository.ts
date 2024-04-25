@@ -1,104 +1,87 @@
-import type { CartEntity, CartEntityToDb } from '../types/cart.entity.js';
+import { db } from '../index.js';
 import { Cart } from '../models/cart.model.js';
-import type { WithMongoId, WithoutId } from '../types/utility.js';
-import { transformProductToDto } from './product.repository.js';
-import type { ProductEntity } from '../types/product.entity.js';
+import { CartItem } from '../models/cartItem.model.js';
+import type { CartEntity, CartItemEntityToDb } from '../types/cart.entity.js';
 
-const transformCartToDto = (
-  cart:
-    | (WithMongoId<CartEntity> & {
-        items: { count: number; product: WithMongoId<ProductEntity> }[];
-      })
-    | null
-): CartEntity | null => {
-  if (cart === null) {
-    return null;
-  }
-
+const transformCartToDto = (cart: Cart): CartEntity => {
   return {
-    id: cart._id.toString(),
-    userId: cart.userId,
+    id: cart.id,
+    userId: cart.user.id,
     isDeleted: cart.isDeleted,
     items:
-      cart.items.map(
-        ({
-          count,
-          product,
-        }: {
-          count: number;
-          product: WithMongoId<ProductEntity>;
-        }) => ({
-          count,
-          product: transformProductToDto(product),
-        })
-      ) || [],
+      cart.items.map(({ count, product }) => ({
+        count,
+        product: product.getEntity(),
+      })) || [],
   };
-};
-
-export const getCartById = async (id: string): Promise<CartEntity | null> => {
-  return transformCartToDto(
-    await Cart.findById(id)
-      .populate({
-        path: 'items',
-        populate: {
-          path: 'product',
-          model: 'Product',
-        },
-      })
-      .lean()
-  );
 };
 
 export const getCartByUserId = async (
   userId: string
 ): Promise<CartEntity | null> => {
-  return transformCartToDto(
-    await Cart.findOne({ userId })
-      .populate({
-        path: 'items',
-        populate: {
-          path: 'product',
-          model: 'Product',
-        },
-      })
-      .lean()
+  const cart = await db.carts.findOne(
+    { userId, isDeleted: false },
+    { populate: ['items', 'items.product'] }
   );
+  if (!cart) {
+    return null;
+  }
+
+  return transformCartToDto(cart);
 };
 
-export const addCart = async (
-  cartWithoutId: WithoutId<CartEntity>
-): Promise<CartEntity | null> => {
-  return transformCartToDto(
-    await (
-      await Cart.create(cartWithoutId)
-    ).populate({
-      path: 'items',
-      populate: {
-        path: 'product',
-        model: 'Product',
-      },
-    })
-  );
+export const addCart = async (userId: string): Promise<CartEntity | null> => {
+  const cart = new Cart(userId);
+
+  await db.em.persistAndFlush(cart);
+
+  return transformCartToDto(cart);
 };
 
 export const updateCart = async (
-  cart: CartEntityToDb
+  userId: string,
+  updatedItems: CartItemEntityToDb
 ): Promise<CartEntity | null> => {
-  return transformCartToDto(
-    await Cart.findByIdAndUpdate(cart.id, cart, {
-      new: true,
-    }).populate({
-      path: 'items',
-      populate: {
-        path: 'product',
-        model: 'Product',
-      },
-    })
+  const cart = await db.carts.findOne(
+    { userId, isDeleted: false },
+    { populate: ['items', 'items.product'] }
   );
+
+  if (!cart) {
+    return null;
+  }
+
+  const item = cart.items.find(
+    (item) => item.product?.id === updatedItems.productId
+  );
+
+  if (item && updatedItems.count > 0) {
+    item.count = updatedItems.count;
+  } else if (item && updatedItems.count <= 0) {
+    cart.items.remove(item);
+  } else if (!item && updatedItems.count > 0) {
+    cart.items.add(new CartItem(updatedItems.productId, updatedItems.count));
+  }
+
+  await db.em.flush();
+
+  return transformCartToDto(cart);
 };
 
 export const deleteCart = async (
   userId: string
 ): Promise<CartEntity | null> => {
-  return transformCartToDto(await Cart.findOneAndDelete({ userId }));
+  const cart = await db.carts.findOne(
+    { userId, isDeleted: false },
+    { populate: ['items', 'items.product'] }
+  );
+
+  if (!cart) {
+    return null;
+  }
+
+  cart.isDeleted = true;
+  await db.em.flush();
+
+  return transformCartToDto(cart);
 };

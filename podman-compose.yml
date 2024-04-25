@@ -1,12 +1,12 @@
 version: '3'
 services:
-  mongo:
-    image: "mongo"
-    container_name: "xstack-layered-arch-nosql"
-    restart: always
+  postgres-db:
+    image: "postgres:12"
+    container_name: "node-gmp-db"
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=nodegmp
-      - MONGO_INITDB_DATABASE=layered-arch-nosql
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    restart: always
     ports:
-      - '27017:27017'
+      - '${DB_PORT}:5432'
