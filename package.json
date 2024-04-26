@@ -9,28 +9,39 @@
   "main": "src/index.ts",
   "type": "module",
   "scripts": {
-    "start": "rm -rf dist && tsc && ./node_modules/.bin/pm2 start dist/index.js --name xstack-layered-arch-app",
-    "stop": "./node_modules/.bin/pm2 stop xstack-layered-arch-app",
+    "build": "rm -rf dist && tsc",
+    "start-server": "./node_modules/.bin/pm2 start dist/index.js --name xstack-layered-arch-app",
+    "stop-server": "./node_modules/.bin/pm2 stop xstack-layered-arch-app",
     "logs": "./node_modules/.bin/pm2 logs xstack-layered-arch-app",
-    "db-start": "podman-compose up -d",
+    "db-start": "podman-compose --env-file .env up -d",
     "db-stop": "podman-compose down",
-    "seed": "rm -rf dist && tsc && npx ts-node dist/seed",
-    "db-seed": "npm run db-start && npm run seed",
+    "db-init": "npm run db-start && npx mikro-orm migration:up && npx mikro-orm seeder:run",
+    "start": "npm run build && npm run db-init && npm run start-server",
+    "stop": "npm run stop-server && npm run db-stop",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Onlyal33",
   "license": "MIT",
   "dependencies": {
+    "@mikro-orm/cli": "^6.2.3",
+    "@mikro-orm/core": "^6.2.3",
+    "@mikro-orm/migrations": "^6.2.3",
+    "@mikro-orm/postgresql": "^6.2.3",
+    "@mikro-orm/seeder": "^6.2.3",
+    "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "joi": "^17.12.3",
-    "mongoose": "^8.3.2"
+    "joi": "^17.13.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/mongoose": "^5.11.97",
-    "@types/uuid": "^9.0.8",
     "pm2": "^5.3.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
+  },
+  "mikro-orm": {
+    "configPaths": [
+      "./dist/config/orm.config.js",
+      "./src/config/orm.config.ts"
+    ]
   }
 }

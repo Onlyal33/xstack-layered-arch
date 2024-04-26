@@ -1,16 +1,39 @@
-import mongoose, { Schema } from 'mongoose';
-import type { CartEntity } from '../types/cart.entity.js';
-import { Product } from './product.model.js';
+import {
+  Collection,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  PrimaryKey,
+  Property,
+  Reference,
+  t,
+  type Ref,
+} from '@mikro-orm/core';
+import { CartItem } from './cartItem.model.js';
+import { User } from './user.model.js';
 
-const CartSchema: Schema = new Schema({
-  userId: { type: String, required: true },
-  isDeleted: { type: Boolean, required: true },
-  items: [
-    {
-      product: { type: Schema.Types.ObjectId, ref: Product, required: true },
-      count: { type: Number, required: true, default: 0 },
-    },
-  ],
-});
+@Entity()
+export class Cart {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string;
 
-export const Cart = mongoose.model<CartEntity>('Cart', CartSchema);
+  @ManyToOne(() => User, { ref: true })
+  user!: Ref<User>;
+
+  @Property()
+  isDeleted!: boolean;
+
+  @OneToMany(() => CartItem, (item) => item.cart, { orphanRemoval: true })
+  items = new Collection<CartItem>(this);
+
+  @Property({ persist: false })
+  get userId(): string {
+    return this.user.id;
+  }
+
+  constructor(userId: string) {
+    this.user = Reference.createFromPK(User, userId);
+    this.isDeleted = false;
+    this.items.set([]);
+  }
+}

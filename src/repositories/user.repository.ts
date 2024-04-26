@@ -1,27 +1,20 @@
+import { db } from '../index.js';
 import { User } from '../models/user.model.js';
 import type { UserEntity } from '../types/user.entity.js';
-import type { WithMongoId } from '../types/utility.js';
-
-const transformUserToDto = (
-  user: WithMongoId<UserEntity> | null
-): UserEntity | null => {
-  if (user === null) {
-    return null;
-  }
-
-  return {
-    id: user._id.toString(),
-  };
-};
 
 export const getUsers = async (): Promise<UserEntity[] | null> => {
-  return (await User.find()).map(transformUserToDto) as UserEntity[];
+  const users = await db.users.findAll();
+  return users;
 };
 
 export const getUserById = async (id: string): Promise<UserEntity | null> => {
-  return transformUserToDto(await User.findById(id));
+  const user = await db.users.findOne(id);
+  return user;
 };
 
 export const addUser = async (): Promise<UserEntity | null> => {
-  return transformUserToDto(await User.create({}));
+  const user = new User();
+  db.users.create(user);
+  await db.em.flush();
+  return user;
 };

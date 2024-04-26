@@ -1,6 +1,6 @@
 import type { CartItemEntity, CartItemEntityToDb } from './cart.entity.js';
 
-type ORDER_STATUS = 'created' | 'completed';
+export type ORDER_STATUS = 'created' | 'completed';
 
 interface OrderEntityBase {
   userId: string;

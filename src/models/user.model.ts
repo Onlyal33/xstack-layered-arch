@@ -1,6 +1,7 @@
-import mongoose, { Schema } from 'mongoose';
-import type { UserEntity } from '../types/user.entity.js';
+import { Entity, PrimaryKey } from '@mikro-orm/core';
 
-const UserSchema: Schema = new Schema({});
-
-export const User = mongoose.model<UserEntity>('User', UserSchema);
+@Entity()
+export class User {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string;
+}

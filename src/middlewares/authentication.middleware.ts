@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { AppError } from './errorHandler.middleware.js';
 import { findUserByIdService } from '../services/user.service.js';
-import { Types } from 'mongoose';
+import { idSchema } from './validation.middleware.js';
 
 export const authenticationMiddleware = async (
   req: Request,
@@ -13,8 +13,8 @@ export const authenticationMiddleware = async (
   if (
     !userId ||
     typeof userId !== 'string' ||
-    !Types.ObjectId.isValid(userId)
-  ) {
+    idSchema.validate(userId).error)
+  {
     next(new AppError('User is not authorized', 401));
     return;
   }
