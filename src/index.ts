@@ -1,14 +1,15 @@
-import express from 'express';
-import { cartRouter } from './routers/cart.router.js';
-import { productRouter } from './routers/product.router.js';
-import { errorHandler } from './middlewares/errorHandler.middleware.js';
-import { authenticationMiddleware } from './middlewares/authentication.middleware.js';
-import { initORM } from './initDb.js';
-import options from './config/orm.config.js';
 import { RequestContext } from '@mikro-orm/core';
 import * as dotenv from 'dotenv';
-import { userRouter } from './routers/user.router.js';
+import express from 'express';
 import { Socket } from 'node:net';
+import options from './config/orm.config.js';
+import { initORM } from './initDb.js';
+import logger from './logger.js';
+import { authenticationMiddleware } from './middlewares/authentication.middleware.js';
+import { errorHandler } from './middlewares/errorHandler.middleware.js';
+import { cartRouter } from './routers/cart.router.js';
+import { productRouter } from './routers/product.router.js';
+import { userRouter } from './routers/user.router.js';
 
 dotenv.config();
 
@@ -28,7 +29,9 @@ app.get('/api/health', async (req, res) => {
   if (isConnected) {
     res.status(200).send('OK');
   } else {
-    res.status(500).send('DB connection is not established');
+    const message = 'DB connection is not established during health check';
+    logger.error(message);
+    res.status(500).send(message);
   }
 });
 
@@ -42,7 +45,7 @@ app.use((req, res, next) => {
 app.use(errorHandler);
 
 const server = app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  logger.info(`Server is running on port ${PORT}`);
 });
 
 let connections: Socket[] = [];
@@ -58,15 +61,15 @@ server.on('connection', (connection) => {
 });
 
 function shutdown() {
-  console.log('Received kill signal, shutting down gracefully');
+  logger.info('Received kill signal, shutting down gracefully');
 
   server.close(() => {
-    console.log('Closed out remaining connections');
+    logger.info('Closed out remaining connections');
     process.exit(0);
   });
 
   setTimeout(() => {
-    console.error(
+    logger.error(
       'Could not close connections in time, forcefully shutting down'
     );
     process.exit(1);
