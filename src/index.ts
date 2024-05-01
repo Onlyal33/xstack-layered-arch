@@ -1,6 +1,7 @@
 import { RequestContext } from '@mikro-orm/core';
 import * as dotenv from 'dotenv';
 import express from 'express';
+import morgan from 'morgan';
 import { Socket } from 'node:net';
 import options from './config/orm.config.js';
 import { initORM } from './initDb.js';
@@ -17,8 +18,16 @@ export const db = await initORM(options);
 const app = express();
 const PORT = process.env.PORT || 8000;
 
+const stream = {
+  write: (message: string) => {
+    logger.info(message.replace(/\n$/, ''));
+  },
+};
+
 app.use(express.json());
 app.use((req, res, next) => RequestContext.create(db.em, next));
+
+app.use(morgan('[:date] INFO :method :url - :response-time ms', { stream }));
 
 app.use('/api/auth', userRouter);
 app.use('/api/products', authenticationMiddleware, productRouter);
