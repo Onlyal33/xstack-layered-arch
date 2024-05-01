@@ -14,6 +14,10 @@ import { userRouter } from './routers/user.router.js';
 
 dotenv.config();
 
+if (!process.env.NODE_ENV) {
+  process.env.NODE_ENV = 'production';
+}
+
 export const db = await initORM(options);
 const app = express();
 const PORT = process.env.PORT || 8000;

@@ -4,7 +4,7 @@ import winston, { type LoggerOptions } from 'winston';
 dotenv.config();
 
 const loggerOptions: LoggerOptions = {
-  level: 'info',
+  level: process.env.NODE_ENV === 'test' ? 'debug' : 'info',
   format: winston.format.json(),
   //defaultMeta: { },
   transports: [
