@@ -23,6 +23,15 @@ app.use('/api/auth', userRouter);
 app.use('/api/products', authenticationMiddleware, productRouter);
 app.use('/api/profile/cart', authenticationMiddleware, cartRouter);
 
+app.get('/api/health', async (req, res) => {
+  const isConnected = await db.orm.isConnected();
+  if (isConnected) {
+    res.status(200).send('OK');
+  } else {
+    res.status(500).send('DB connection is not established');
+  }
+});
+
 app.use((req, res, next) => {
   res.on('finish', () => {
     db.orm.close();
