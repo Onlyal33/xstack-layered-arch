@@ -7,6 +7,7 @@ import { initORM } from './initDb.js';
 import options from './config/orm.config.js';
 import { RequestContext } from '@mikro-orm/core';
 import * as dotenv from 'dotenv';
+import { userRouter } from './routers/user.router.js';
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ const PORT = 8000;
 app.use(express.json());
 app.use((req, res, next) => RequestContext.create(db.em, next));
 
+app.use('/api/auth', userRouter);
 app.use('/api/products', authenticationMiddleware, productRouter);
 app.use('/api/profile/cart', authenticationMiddleware, cartRouter);
 

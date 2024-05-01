@@ -1,5 +1,6 @@
 import type { EntityManager } from '@mikro-orm/core';
 import { Seeder } from '@mikro-orm/seeder';
+import bcrypt from 'bcrypt';
 import { User } from '../models/user.model.js';
 import { Product } from '../models/product.model.js';
 
@@ -7,6 +8,9 @@ export class DatabaseSeeder extends Seeder {
   async run(em: EntityManager): Promise<void> {
     const user = em.create(User, {
       id: 'd46073bd-00ab-4649-9557-dd2301f76f92',
+      email: 'admin@email.com',
+      password: await bcrypt.hash('password', 10),
+      role: 'admin',
     });
     console.log('User created: ', user.id);
     const product1 = em.create(Product, {

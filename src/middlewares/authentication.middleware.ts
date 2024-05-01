@@ -1,33 +1,27 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { NextFunction, Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
 import { AppError } from './errorHandler.middleware.js';
-import { findUserByIdService } from '../services/user.service.js';
-import { idSchema } from './validation.middleware.js';
 
 export const authenticationMiddleware = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  const userId = req.headers['x-user-id'];
-
-  if (
-    !userId ||
-    typeof userId !== 'string' ||
-    idSchema.validate(userId).error)
-  {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
     next(new AppError('User is not authorized', 401));
     return;
   }
 
-  if (userId === 'admin') {
-    return next();
+  const [tokenType, token] = authHeader.split(' ');
+
+  if (tokenType !== 'Bearer') {
+    next(new AppError('Invalid token type', 401));
+    return;
   }
+
   try {
-    const user = await findUserByIdService(userId);
-    if (!user) {
-      next(new AppError('You must be authorized user', 403));
-      return;
-    }
+    const user = jwt.verify(token, process.env.TOKEN_KEY!) as { id: string };
 
     req.user = user;
   } catch (error) {

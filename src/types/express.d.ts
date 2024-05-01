@@ -1,7 +1,7 @@
-import { UserEntity } from './types';
+import { UserEntity } from './user.entity.js';
 
 declare module 'express-serve-static-core' {
   interface Request {
-    user?: UserEntity;
+    user: { id: string };
   }
 }
