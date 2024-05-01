@@ -13,7 +13,7 @@ dotenv.config();
 
 export const db = await initORM(options);
 const app = express();
-const PORT = 8000;
+const PORT = process.env.PORT || 8000;
 
 app.use(express.json());
 app.use((req, res, next) => RequestContext.create(db.em, next));
