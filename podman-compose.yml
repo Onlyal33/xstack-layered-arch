@@ -10,3 +10,28 @@ services:
     restart: always
     ports:
       - '${DB_PORT}:5432'
+    networks:
+      - my_network
+  app:
+    container_name: "xstack-layered-arch-app"
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
+    restart: always
+    ports:
+      - "${PORT}:8000"
+    environment:
+      NODE_ENV: production
+      DB_NAME: node_gmp
+      DB_HOST: postgres-db
+      DB_PORT: 5432
+      SERVER_SHUTDOWN_TIMEOUT: 20000
+      CONNECTION_CLOSE_TIMEOUT: 10000
+    depends_on:
+      - "node-gmp-db"
+    networks:
+      - my_network
+networks:
+  my_network: {}
